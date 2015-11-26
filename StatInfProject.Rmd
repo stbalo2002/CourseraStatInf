@@ -1,0 +1,130 @@
+---
+title: "Project Report for Coursera Statistical Inference Class"
+author: "Balogun Stephen Taiye"
+date: "Sys.Date()"
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+# Project 1
+
+## Overview
+ The project seeks to investigate the distribution of averages of 40 exponentials
+and compare it with the Central Limit Theorem (*CLT*)
+
+## Simulations
+We are given a sample size (n) to be 40 and a formular $rexp(n, lambda)$ where:
+        - $rexp$ is R exponential distribution
+        - $n$ is the sample size
+        - $lambda is the rate for the sample size (rate given as 0.2)
+ 
+We try to simulate the data to get several 1000 *means* of the data. The formular for the simulation is given as: 
+        
+```{r, "simulated data"}
+nosim <- 1000   ##  number of times to simulate the data
+n <- 40   ##   sample size
+lambda <- 0.2   ## the given rate
+simulate <- apply(matrix(rexp(nosim*n, rate = lambda), nosim), 1, mean)
+```
+The formular given above samples the given data with replacement and draws 
+sample size of 40 1000 times, then find the mean of those 1000 samples
+
+## Sample Mean versus the Theoretical Mean
+ 
+The $theoretical mean$ of the *R* code `rexp(n, lamba)` is given as $1/\lambda$.
+The formular belows shows a plot that compares this *theoretical mean* with the 
+*mean of our simulated data*.
+
+```{r, "theoretical mean vs sample mean", echo = FALSE}
+hist(simulate)
+abline(v = mean(simulate), lwd = 3, col = "blue")  ## shows the sample mean
+abline (v = 1/lambda, lty = "dashed", lwd = 3)   ## shows the theoretical mean on the same plot
+```
+
+The solid blue line shows the mean for the simulated data while the black dashed line shows the theoretical mean. The mean of the simulated data only approximates the theoretical mean because the simulation was not done infinite amount of time.
+
+
+```{r, "table simulated mean and theoretical mean", echo = FALSE}
+simulatedMean <- round(mean(simulate), 3)
+theoreticalMean <- round(1/lambda, 3)
+cbind(simulatedMean, theoreticalMean)
+```
+
+##  Sample Variance versus Theoretical Variance
+
+The theoretical variance is given as $\sigma^2 = (1/ \lambda)^2$ (i.e. var = sd^2) which is equal to 25. The variance for our simulated data is given as $\sigma^2 / n$ which can also be expressed as $theoretical variance / sample size (n)$
+
+```{r, "sample var vs theoretical var", echo = FALSE}
+varTheory <- (1/lambda)^2
+varSample1 <- round(var(simulate), 3)
+varSample2 <- varTheory / n
+cbind(varSample1, varSample2)
+```
+
+##  Distribution
+
+This section attempts to compare the distribution of a single sample size (1000) with the distribution of 1000 averages of several sample size (40) and prove that one of them follows approximately a normal distribution. A distribution is said to be approximately normal if it has a Gaussian pattern of distribution (the so-called "bell curve").
+The formular below plots a graph of a single sample size (1000) with the averages of sample sizes.
+
+```{r, "distribution"}
+##  first i plot the simulated data and overlay the density curve on the histogram
+library(ggplot2)
+g <- ggplot(data = as.data.frame(simulate), aes(x = simulate))
+g <- g + geom_histogram(aes(y = ..density..), fill = "lightblue", colour = "black")
+g <- g + geom_density(size = 2, colour = "black")  
+g
+## next i plot the random exponential of size 1000 and overlay the density curve on the histogram too
+dat <- rexp(1000, rate = lambda)   ## generates a random exponential of size 1000
+g2 <- ggplot(data = as.data.frame(dat), aes(x = dat))
+g2 <- g2 + geom_histogram(aes(y = ..density..), fill = "lightblue", colour = "black")
+g2 <- g2 + geom_density(size = 2, colour = "black")
+g2
+```
+
+From the plots above it becomes obvious that the plot of averages of 40 has a more distribution and hence approximately normal in it's distribution compared to the one of a single sample size of 1000.
+
+---
+
+# Project 2
+
+##  Overview
+
+This second project aims to analyse the *Toothgrowth* data in `R datasets package`, perform some basic exploratory analysis on it, then run some statistical inference with respect to calculation of confidence interval/hypothesis testing
+
+```{r, "basic exploratory analysis"}
+library(printr)
+Toothdata <- ToothGrowth  ## loads the "toothgrowth" data in the datasets package
+dim(Toothdata)    ## shows the number of rows and columns of the data
+summary(Toothdata)  ##  summarises the data
+any(is.na(Toothdata))  ## checks if there are any uncompleted records in the data
+head(Toothdata)    ## checks the first few rows to give an idea how the data looks like
+tail(Toothdata)   ## checks the last few rows to be sure that there are same number of entries for each column
+```
+
+Now that basic exploration has been done, we try to format the data to allow for our hypothesis testing. The data is divided into three different entries each for each of the `dose` of the supplements.
+
+```{r, "creates various subsets"}
+library(dplyr)   ## seems to be my favourite for getting and cleaning data
+sub0.5 <- filter(Toothdata, dose == .5)  ## creates a subset of dose 0.5
+sub1 <- filter(Toothdata, dose == 1.0)   ## creates a subset of dose 1.0
+sub2 <- filter(Toothdata, dose == 2.0)   ## creates the subset with dose 2.0
+```
+
+Next, we run `t.test()` to compare the t-test for the two different types of supplements at the doses given.
+
+```{r, "t.test()"}
+t0.5 <- t.test(len~supp, data = sub0.5)$conf.int   ## t.test at dose 0.5
+t1.0 <- t.test(len~supp, data = sub1)$conf.int  ## t.test at dose 1.0
+t2.0 <- t.test(len~supp, data = sub2)$conf.int  ## t.test at dose 2.0
+rbind(t0.5, t1.0, t2.0)  ## for direct comparison of the different t.test() for the three doses
+```
+
+## Conclusions and Assumptions
+
+*Conclusions*: the Supplement `OJ` appears to have a better growth response on the teeth causing longer length compared to supplement `VC` at doses less than 2.0. The better response seems to even out at dose of 2.0.
+
+*Assumptions*: The analysis assumes that the variables are identical and independently distributed
+

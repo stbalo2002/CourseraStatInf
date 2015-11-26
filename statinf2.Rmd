@@ -1,0 +1,65 @@
+---
+title: "Statistical Inference project 2"
+author: "Balogun Stephen Taiye"
+date: "November 22, 2015"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+---
+
+#  Overview
+
+This second project aims to analyse the *Toothgrowth* data in `R datasets package`, perform some basic exploratory analysis on it, then run some statistical inference with respect to calculation of confidence interval/hypothesis testing
+
+# Basic Exploratory Analysis
+
+Glancing through the data to have a general look at the data, check if there are missing entries and some other basic exploration.
+
+```{r, "setting global options", include = FALSE}
+library(knitr)
+opts_chunk$set(warning = FALSE, error = FALSE, message = FALSE, fig.width = 5, fig.height = 5)
+library(printr)
+```
+
+```{r, "basic exploratory analysis"}
+Toothdata <- ToothGrowth  ## loads the "toothgrowth" data in the datasets package
+dim(Toothdata)    ## shows the number of rows and columns of the data
+summary(Toothdata)  ##  summarises the data
+any(is.na(Toothdata))  ## checks if there are any uncompleted records in the data
+head(Toothdata)    ## checks the first few rows to give an idea how the data looks like
+tail(Toothdata)   ## checks the last few rows to be sure that there are same number of entries for each column
+```
+
+Good, all columns are of equal length, no missing entries and the data format is appropriate for further analysis.
+Now that basic exploration has been done, we try to format the data to allow for our hypothesis testing, creating subset for each of the `dose`.
+
+```{r, "create subsets"}
+library(dplyr)   ## seems to be my favourite for getting and cleaning data
+sub0.5 <- filter(Toothdata, dose == .5)  ## creates a subset of dose 0.5
+sub1 <- filter(Toothdata, dose == 1.0)   ## creates a subset of dose 1.0
+sub2 <- filter(Toothdata, dose == 2.0)   ## creates the subset with dose 2.0
+```
+
+Next, we run `t.test()` to compare the t-test for the two different types of supplements at the three doses given.
+
+```{r, "t.test()"}
+t0.5 <- t.test(len~supp, data = sub0.5)$conf.int   ## t.test at dose 0.5
+t1.0 <- t.test(len~supp, data = sub1)$conf.int  ## t.test at dose 1.0
+t2.0 <- t.test(len~supp, data = sub2)$conf.int  ## t.test at dose 2.0
+rbind(t0.5, t1.0, t2.0)  ## for direct comparison of the different t.test() for the three doses
+```
+
+The formula above runs`t.test()` on each of the subsets, then binds them so they appear on different rows of the same column to allow for comparison.
+
+# Conclusions and Assumptions
+
+##  *Conclusions*: 
+
+The result shows that the `t.test()` result for doses 0.5 and 1.0 does not include 0 while the result appears to be balanced at 0 when the dose is 2.0. This means that Supplement `OJ` have a better growth response on the teeth causing longer length compared to supplement `VC` at doses less than 2.0. At dose 0f 2.0, there does not seem to be a significant difference in the tooth length when either of the supplements is used.
+
+##  *Assumptions*: 
+
+The analysis assumes that the variables are identical and independently distributed. that is, the results are from samples drawn randomly and the outcome of one does not influence the outcome of the other. 
+
